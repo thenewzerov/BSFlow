@@ -1,0 +1,5 @@
+pysoundfile
+numpy
+tensorflow==2.0.0-rc0
+matplotlib
+progress
