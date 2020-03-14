@@ -25,10 +25,8 @@ class RBBNetwork(BeatSaberNetwork):
 
             tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
             tf.keras.layers.Dense(100, activation='relu', kernel_initializer='random_normal'),
+            tf.keras.layers.Dense(100, activation='softmax', kernel_initializer='random_normal'),
             tf.keras.layers.Dense(100, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(200, activation='softmax', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(100, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
             tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
 
             tf.keras.layers.Dense(self.output_size, activation='softmax')
@@ -122,7 +120,7 @@ class RBBNetwork(BeatSaberNetwork):
         no_notes = 0
 
         for step, step_input in enumerate(steps):
-            if yn_gen_results[step][yn_output_size - 1] > yn_gen_results[step][yn_output_size - 2]:
+            if yn_gen_results[step] == 1:
 
                 step_input = np.array(step_input)
                 step_input = np.reshape(step_input, [1, self.input_size])

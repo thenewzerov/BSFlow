@@ -25,12 +25,13 @@ class Utils:
 
             beats_in_song = round(((len(f) / f.samplerate) / 60) * bpm)
             frames_per_step = round(len(f) / (beats_in_song * notes_per_beat))
+            total_steps = beats_in_song * notes_per_beat
             print('    Samples         = {}'.format(len(f)))
             print('    Sample Rate     = {}'.format(f.samplerate))
             print('    Seconds         = {}'.format(len(f) / f.samplerate))
             print('    Beats In  Song  = {} (at {} BPM)'.format(beats_in_song, bpm))
             print('    Frames Per Step = {}'.format(frames_per_step))
-            print('    Total Steps     = {}'.format(beats_in_song * notes_per_beat))
+            print('    Total Steps     = {}'.format(total_steps))
 
             # Create an array to store the normalized data
             normalized = []
@@ -50,16 +51,16 @@ class Utils:
             for x in range(len(data)):
                 for c in range(f.channels):
                     if data[x][c] < min_frame:
-                        min_frame = data[x][c]
+                        min_frame = round(data[x][c], 2)
                     if data[x][c] > max_frame:
-                        max_frame = data[x][c]
+                        max_frame = round(data[x][c], 2)
 
                     beat_sum += data[x][c]
 
                 frame_count += 1
 
                 if frame_count == frames_per_step:
-                    average = (beat_sum / frames_per_step)
+                    average = round((beat_sum / frames_per_step), 2)
                     normalized.append([min_frame, average, max_frame])
                     beat_sum = 0
                     frame_count = 0
@@ -67,8 +68,6 @@ class Utils:
                     max_frame = 0
 
             normalized = np.array(normalized)
-            normalized = normalized - normalized.mean()
-            normalized = normalized / np.abs(normalized).max()
 
             print('   Total Beats = {}'.format(len(normalized)))
 
@@ -251,3 +250,4 @@ class Utils:
         f = open(output_file + ".notes.json", 'w')
         json.dump(output_dict, f)
         f.close()
+        print("\n   Created Song File\n")

@@ -24,12 +24,12 @@ class LineLayerNetwork(BeatSaberNetwork):
             tf.keras.layers.Dense(self.input_size, activation='linear', input_shape=(self.input_size,)),
 
             tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
+            tf.keras.layers.Dense(100, activation='relu', kernel_initializer='random_normal'),
+            tf.keras.layers.Dense(150, activation='relu', kernel_initializer='random_normal'),
+            tf.keras.layers.Dense(100, activation='relu', kernel_initializer='random_normal'),
             tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(100, activation='softmax', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(self.output_size, activation='relu')
+
+            tf.keras.layers.Dense(self.output_size, activation='softmax')
         ])
 
         self.model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'], run_eagerly=False)

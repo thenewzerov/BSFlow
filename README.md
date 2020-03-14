@@ -8,13 +8,13 @@ This was developed using Python 3 and Tensorflow 2.0-rc. Make sure the following
 2) pip3
 
 ```bash
-# clone the repo
+# Clone the repo
 $ git clone https://github.com/thenewzerov/bsflow.git
 
-# change the working directory to BSFlow
+# Change the working directory to BSFlow
 $ cd bsflow
 
-# install the requirements
+# Install the requirements
 $ python3 -m pip install -r requirements.txt
 ```
 

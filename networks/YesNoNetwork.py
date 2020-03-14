@@ -1,102 +1,29 @@
-from networks.BeatSaberNetwork import BeatSaberNetwork
 import numpy as np
-import random
-import tensorflow as tf
 from utils.Utils import Utils
 
 
-class YesNoNetwork(BeatSaberNetwork):
+def high_pass_filter(normalized, lower_bound):
+    results = []
+    total_notes = 0
+    for frame in normalized:
+        if frame[2] > lower_bound:
+            results.append(1)
+            total_notes = total_notes + 1
+        else:
+            results.append(0)
+    return results, total_notes
+
+
+class YesNoNetwork:
+
+    def __init__(self):
+        self.input_size = 10
+        self.output_size = 10
+        self.set_sizes()
 
     def set_sizes(self):
         self.input_size = 14
-        self.output_size = 2
-
-    def build_model(self):
-        """
-        Builds the Yes/No Model
-        :return:
-        """
-        print("Creating YNN Neural Network...")
-
-        # Create the training model
-        model = tf.keras.Sequential([
-            # Input Layer
-            tf.keras.layers.Dense(self.input_size, activation='linear', input_shape=(self.input_size,)),
-
-            tf.keras.layers.Dense(40, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(80, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(100, activation='softmax', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(50, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(40, activation='softmax', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(20, activation='relu', kernel_initializer='random_normal'),
-            tf.keras.layers.Dense(10, activation='relu', kernel_initializer='random_normal'),
-
-            tf.keras.layers.Dense(self.output_size, activation='softmax')
-        ])
-
-        model.compile(optimizer='adam',
-                      loss='binary_crossentropy',
-                      metrics=['binary_accuracy'],
-                      run_eagerly=False)
-
-        self.model = model
-
-    def build_training_data(self, directory):
-        """
-        Builds Training data for a song directory
-        :param directory: Song directory
-        :return: Training data for a song
-        """
-
-        training_set = []
-
-        song_meta_data, normalized, song_data = Utils.get_data_for_directory(directory, self.difficulty, self.bpm, self.notes_per_beat)
-
-        # Sanity check
-        if song_meta_data is not None and normalized is not None:
-            for song_map in song_data:
-                notes = Utils.get_notes_for_song(song_map, song_meta_data['_beatsPerMinute'], self.bpm, self.accuracy)
-                step_data = self.build_ynn_input(normalized, notes)
-                training_set.extend(step_data)
-
-        random.shuffle(training_set)
-
-        training_inputs = []
-        training_outputs = []
-        for data_pair in training_set:
-            training_inputs.append(data_pair[0])
-            training_outputs.append(data_pair[1])
-
-        print("Training Data Created")
-        return training_inputs, training_outputs
-
-    def build_ynn_input(self, normalized_song_data, song_data):
-        """
-
-        :param normalized_song_data:
-        :param song_data:
-        :return:
-        """
-        print("    Creating Training Data for song")
-
-        step_data = []
-
-        steps = Utils.build_step_input(normalized_song_data, self.input_size)
-
-        for step, step_input in enumerate(steps):
-            step_output = [0] * self.output_size
-
-            # Go through the notes, if the previous step had data, mark it as an input
-            for note in song_data:
-                if note['_time'] == ((step - 1) * self.notes_per_beat):
-                    step_input[self.input_size - 1] = 1
-                if note['_time'] == (step * self.notes_per_beat):
-                    step_output[self.output_size - 1] = 1
-
-            step_data.append([step_input, step_output])
-
-        print("    Training Data for Song Created")
-        return step_data
+        self.output_size = 5
 
     def gen_data(self, normalized):
         """
@@ -111,21 +38,29 @@ class YesNoNetwork(BeatSaberNetwork):
         y_notes = 0
         n_notes = 0
 
-        for step, step_input in enumerate(steps):
+        lower_bound = 1.5
+        results, total_notes = high_pass_filter(normalized, lower_bound)
 
-            step_input = np.array(step_input)
-            step_input = np.reshape(step_input, [1, self.input_size])
-            result = self.model.predict(step_input)
+        while total_notes < (len(normalized) * .8):
+            lower_bound = lower_bound - abs(lower_bound / 100)
+            results, total_notes = high_pass_filter(normalized, lower_bound)
 
-            if step < len(steps) - 1:
-                if result[0][self.output_size - 1] > result[0][self.output_size - 2]:
-                    steps[step + 1][self.input_size - 1] = 1
-                    y_notes += 1
-                else:
-                    n_notes += 1
+        print('  ', total_notes, ' note positions generated')
+        print('  ', (len(normalized) - total_notes), ' position with no notes generated')
 
-            results.append(result[0])
+        final_data = []
+        for index, x in enumerate(results):
+            frame = [0, 0, x, 0, 0]
 
-        print('  ', y_notes, ' note positions generated')
-        print('  ', n_notes, ' position with no notes generated')
+            if index > 1:
+                frame[0] = results[index - 2]
+            if index > 0:
+                frame[1] = results[index - 1]
+            if index < len(results)-1:
+                frame[3] = results[index + 1]
+            if index < len(results)-2:
+                frame[4] = results[index + 2]
+
+            final_data.append(frame)
+
         return results

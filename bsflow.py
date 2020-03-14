@@ -1,4 +1,5 @@
 import argparse
+import time
 
 from networks.LineIndexNetwork import LineIndexNetwork
 from networks.LineLayerNetwork import LineLayerNetwork
@@ -53,27 +54,47 @@ def get_args():
 # Main
 def main():
 
+    print("\nStarting Song Generation.\n")
+
     args = get_args()
 
     # Load the models
-    yn_model = YesNoNetwork('YNNetwork', args.difficulty, args.bpm, args.directory, args.iterations, 2, args.notes_per_beat, regen_model=args.force_regen)
+    yn_model = YesNoNetwork()
     rbb_model = RBBNetwork('RBBNetwork', args.difficulty, args.bpm, args.directory, args.iterations, 2, args.notes_per_beat, regen_model=args.force_regen)
     li_model = LineIndexNetwork('LINetwork', args.difficulty, args.bpm, args.directory, args.iterations, 2, args.notes_per_beat, regen_model=args.force_regen)
-    ll_model = LineLayerNetwork('LLNetwork', args.difficulty, args.bpm, args.directory, args.iterations, 2,args.notes_per_beat, regen_model=args.force_regen)
+    ll_model = LineLayerNetwork('LLNetwork', args.difficulty, args.bpm, args.directory, args.iterations, 2, args.notes_per_beat, regen_model=args.force_regen)
+
+    # Start a Timer
+    start_time = time.time()
 
     # Load the data for out target song
     target_song_normalized = Utils.normalize_audio_file(args.input, args.bpm, args.notes_per_beat)
 
+    print("Normalized the song in %s seconds" % (time.time() - start_time))
+
     print("\nCreating new song...\n")
+    section_time = time.time()
     yn_results = yn_model.gen_data(target_song_normalized)
+    print("Generated Note Positions in %s seconds" % (time.time() - section_time))
+
+    section_time = time.time()
     rbb_results = rbb_model.gen_data(target_song_normalized, yn_results, yn_model.output_size)
+    print("Generated Red/Blues in %s seconds" % (time.time() - section_time))
+
     notes = build_rbb_song_output(rbb_results, rbb_model.output_size, args.notes_per_beat)
+
+    section_time = time.time()
     li_results, notes = li_model.gen_data(target_song_normalized, notes)
+    print("Generated Line Indexes in %s seconds" % (time.time() - section_time))
+
+    section_time = time.time()
     ll_results, notes = ll_model.gen_data(target_song_normalized, notes)
+    print("Generated Line Layers in %s seconds" % (time.time() - section_time))
 
     print("\nFinalizing Song...\n")
     notes = Utils.set_note_times(notes, args.notes_per_beat)
     Utils.write_output_file(args.input, notes)
+    print("Total Song Generation Time: %s seconds" % (time.time() - start_time))
 
 
 main()
