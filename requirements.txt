@@ -1,5 +1,5 @@
 pysoundfile
 numpy
-tensorflow==2.5.0rc0
+tensorflow==2.5.3
 matplotlib
 progress
